@@ -6,7 +6,6 @@ import hmac
 from datetime import datetime
 import re
 
-# Initialize DB
 database.init_db()
 
 def write_formatted_sheet(workbook, worksheet, final_df, detected_date_str, years_text):
@@ -353,16 +352,12 @@ with tab1:
                 df_res['Branch'] = df_res['Branch'].fillna('Unknown').astype(str).str.strip().str.upper()
                 df_res['Year'] = df_res['Year'].fillna('Unknown').astype(str).str.strip().str.upper()
 
-                # --- AGGRESSIVE CITAR DETECTION (Forcing Differentiation) ---
-                # Check all relevant columns for "CITAR" keyword to ensure separate row generation
-                detect_cols = ['Year', 'Branch'] 
-                if 'Source_Filename' in df_res.columns: detect_cols.append('Source_Filename')
+                # --- REFINED CITAR DETECTION ---
+                # Check for explicit "CITAR" labeling in Year column
+                mask_yr = df_res['Year'].astype(str).str.upper().str.contains('CITAR', na=False)
+                df_res.loc[mask_yr, 'Year'] = 'CITAR-III'
                 
-                for col in detect_cols:
-                    mask = df_res[col].astype(str).str.upper().str.contains('CITAR', na=False)
-                    df_res.loc[mask, 'Year'] = 'CITAR-III'
-                
-                # Registration Number is the definitive student-level authority
+                # Registration Number is the definitive student-level authority (Primary Trigger)
                 if 'Reg No' in df_res.columns:
                     mask_reg = df_res['Reg No'].astype(str).str.upper().str.contains('CITAR', na=False)
                     df_res.loc[mask_reg, 'Year'] = 'CITAR-III'
